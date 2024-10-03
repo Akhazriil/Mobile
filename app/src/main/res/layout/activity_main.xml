@@ -7,16 +7,56 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:onClick="Click"
-        android:text="Button"
+    <ImageButton
+        android:id="@+id/buttonPaper"
+        android:layout_width="90dp"
+        android:layout_height="122dp"
+        android:onClick="buttonPaper"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/papa"
+        android:contentDescription="@string/paper_button_description"/>
+
+    <ImageButton
+        android:id="@+id/buttonRock"
+        android:layout_width="90dp"
+        android:layout_height="122dp"
+        android:layout_marginStart="4dp"
+        android:onClick="buttonRock"
+        app:layout_constraintEnd_toStartOf="@+id/buttonScissors"
+        app:layout_constraintStart_toEndOf="@+id/buttonPaper"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/srock"
+        android:contentDescription="@string/rock_button_description"/>
+
+    <ImageButton
+        android:id="@+id/buttonScissors"
+        android:layout_width="90dp"
+        android:layout_height="125dp"
+        android:onClick="buttonScissors"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/scikit"
+        android:contentDescription="@string/scissors_button_description"/>
+
+    <TextView
+        android:id="@+id/score"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:text="Счет: 0 : 0"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.499" />
+        app:layout_constraintTop_toBottomOf="@+id/buttonRock" />
 
+    <Button
+        android:id="@+id/settings_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Настройки"
+        android:onClick="openSettings"
+        app:layout_constraintTop_toBottomOf="@+id/score"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
