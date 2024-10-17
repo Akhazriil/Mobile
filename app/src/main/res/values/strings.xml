@@ -3,4 +3,8 @@
     <string name="rock_button_description">rock</string>
     <string name="scissors_button_description">scissors</string>
     <string name="paper_button_description">paper</string>
+    <string name="firstInput">Из</string>
+    <string name="secondInput">В</string>
+    <string name="converter">Перевести</string>
+    <string name="conversionResult" />
 </resources>

@@ -1,118 +1,113 @@
 package com.example.mobileapp;
 
-import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-    int human_score = 0;
-    int computer_score = 0;
-    int max_score = 5; // По умолчанию максимальное количество очков
+
+    private EditText amountEditText;
+    private Spinner fromCurrencySpinner;
+    private Spinner toCurrencySpinner;
+    private Button convertButton;
+    private TextView resultTextView;
+
+    private HashMap<String, Double> currencyRates = new HashMap<>();
+    private String[] currencies = {"AUD", "AZN", "GBP", "AMD", "BYN", "BGN", "BRL", "HUF", "VND", "HKD", "GEL", "DKK", "AED", "USD", "EUR", "RUB"}; // Добавил "RUB"
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Получаем лимит очков из настроек, если он был изменен
-        Intent intent = getIntent();
-        if (intent != null && intent.hasExtra("max_score")) {
-            max_score = intent.getIntExtra("max_score", 5);
+        amountEditText = findViewById(R.id.amountEditText);
+        fromCurrencySpinner = findViewById(R.id.fromCurrencySpinner);
+        toCurrencySpinner = findViewById(R.id.toCurrencySpinner);
+        convertButton = findViewById(R.id.convertButton);
+        resultTextView = findViewById(R.id.resultTextView);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, currencies);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        fromCurrencySpinner.setAdapter(adapter);
+        toCurrencySpinner.setAdapter(adapter);
+
+        new FetchCurrencyRatesTask().execute();
+
+        convertButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                convertCurrency();
+            }
+        });
+    }
+
+    private void convertCurrency() {
+        double amount = Double.parseDouble(amountEditText.getText().toString());
+        String fromCurrency = fromCurrencySpinner.getSelectedItem().toString();
+        String toCurrency = toCurrencySpinner.getSelectedItem().toString();
+
+        double fromRate = currencyRates.get(fromCurrency);
+        double toRate = currencyRates.get(toCurrency);
+
+        double result = amount * (toRate / fromRate);
+        resultTextView.setText(String.format("%.2f %s", result, toCurrency));
+    }
+
+    private class FetchCurrencyRatesTask extends AsyncTask<Void, Void, HashMap<String, Double>> {
+        @Override
+        protected HashMap<String, Double> doInBackground(Void... voids) {
+            try {
+                URL url = new URL("https://www.cbr.ru/scripts/XML_daily.asp");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.connect();
+
+                InputStream inputStream = connection.getInputStream();
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                Document document = builder.parse(inputStream);
+
+                NodeList nodeList = document.getElementsByTagName("Valute");
+                HashMap<String, Double> rates = new HashMap<>();
+
+                for (int i = 0; i < nodeList.getLength(); i++) {
+                    Element element = (Element) nodeList.item(i);
+                    String charCode = element.getElementsByTagName("CharCode").item(0).getTextContent();
+                    String value = element.getElementsByTagName("Value").item(0).getTextContent().replace(',', '.');
+                    rates.put(charCode, Double.parseDouble(value));
+                }
+
+                // Добавляем курс рубля как 1, поскольку мы используем его в качестве базовой валюты
+                rates.put("RUB", 1.0);
+
+                return rates;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
         }
-    }
 
-    public void buttonScissors(View view) {
-        resultHandler("Scissors");
-    }
-
-    public void buttonRock(View view) {
-        resultHandler("Rock");
-    }
-
-    public void buttonPaper(View view) {
-        resultHandler("Paper");
-    }
-
-    private void resultHandler(String object_value) {
-        int int_result = actionHandler(object_value);
-        TextView textView = findViewById(R.id.score);
-        String score;
-
-        if (int_result == 1) {
-            human_score += 1;
-            Toast.makeText(this, "Вы выиграли раунд!", Toast.LENGTH_SHORT).show();
-        } else if (int_result == -1) {
-            computer_score += 1;
-            Toast.makeText(this, "Вы проиграли раунд!", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Ничья!", Toast.LENGTH_SHORT).show();
+        @Override
+        protected void onPostExecute(HashMap<String, Double> rates) {
+            if (rates != null) {
+                currencyRates.putAll(rates);
+            }
         }
-
-        score = "Счет: " + human_score + " : " + computer_score;
-        textView.setText(score);
-
-        checkGameOver();
-    }
-
-    private void checkGameOver() {
-        if (human_score >= max_score) {
-            Toast.makeText(this, "Вы выиграли игру!", Toast.LENGTH_LONG).show();
-            resetGame();
-        } else if (computer_score >= max_score) {
-            Toast.makeText(this, "Компьютер выиграл игру!", Toast.LENGTH_LONG).show();
-            resetGame();
-        }
-    }
-
-    private void resetGame() {
-        human_score = 0;
-        computer_score = 0;
-        TextView textView = findViewById(R.id.score);
-        textView.setText("Счет: 0 : 0");
-    }
-
-    private static int actionHandler(String human_action) {
-        String computer_action = computerAction();
-        if (Objects.equals(computer_action, human_action)) {
-            return 0; // ничья
-        }
-
-        switch (human_action) {
-            case "Rock":
-                return (Objects.equals(computer_action, "Scissors") ? 1 : -1);
-            case "Paper":
-                return (Objects.equals(computer_action, "Rock") ? 1 : -1);
-            case "Scissors":
-                return (Objects.equals(computer_action, "Paper") ? 1 : -1);
-        }
-        return 0;
-    }
-
-    private static String computerAction() {
-        int random_number = getRandom();
-        return getDictionary(random_number);
-    }
-
-    private static String getDictionary(int human_key) {
-        Map<String, String> action_dict = new HashMap<>();
-        action_dict.put("1", "Scissors");
-        action_dict.put("2", "Rock");
-        action_dict.put("3", "Paper");
-        return action_dict.get(Integer.toString(human_key));
-    }
-
-    private static int getRandom() {
-        return (int) ((3 * Math.random()) + 1);
-    }
-
-    public void openSettings(View view) {
-        Intent intent = new Intent(this, SettingsActivity.class);
-        startActivity(intent);
     }
 }
